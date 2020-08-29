@@ -18,18 +18,18 @@
  */
 package org.jasig.ssp.service.impl;
 
-import org.apache.commons.lang.StringUtils;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
 import org.jasig.ssp.dao.JournalEntryDao;
-import org.jasig.ssp.dao.PersonDao;
 import org.jasig.ssp.model.JournalEntry;
 import org.jasig.ssp.model.JournalEntryDetail;
-import org.jasig.ssp.model.ObjectStatus;
 import org.jasig.ssp.model.Person;
 import org.jasig.ssp.service.AbstractRestrictedPersonAssocAuditableService;
 import org.jasig.ssp.service.JournalEntryService;
 import org.jasig.ssp.service.ObjectNotFoundException;
 import org.jasig.ssp.service.PersonProgramStatusService;
-import org.jasig.ssp.transferobject.reports.BaseStudentReportTO;
 import org.jasig.ssp.transferobject.reports.EntityCountByCoachSearchForm;
 import org.jasig.ssp.transferobject.reports.EntityStudentCountByCoachTO;
 import org.jasig.ssp.transferobject.reports.JournalCaseNotesStudentReportTO;
@@ -42,14 +42,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 @Service
 @Transactional
 public class JournalEntryServiceImpl
@@ -57,22 +49,25 @@ public class JournalEntryServiceImpl
 		implements JournalEntryService {
 
 	@Autowired
-	private transient JournalEntryDao dao;
+	private transient JournalEntryDao dao; //1
 
 	@Autowired
-	private transient PersonProgramStatusService personProgramStatusService;
+	private transient PersonProgramStatusService personProgramStatusService; //1
+	
+//	@Autowired
+//	private transient PersonDao personDao; //1
 	
 	@Autowired
-	private transient PersonDao personDao;
+	private GetJournalCaseNoteStudentReportTOsFromCriteria getJournalCaseNoteStudentReportTOsFromCriteria;
 
 	@Override
-	protected JournalEntryDao getDao() {
+	protected JournalEntryDao getDao() { //2
 		return dao;
 	}
 
 	@Override
-	public JournalEntry create(final JournalEntry obj)
-			throws ObjectNotFoundException, ValidationException {
+	public JournalEntry create(final JournalEntry obj) //1
+			throws ObjectNotFoundException, ValidationException { //2
 		final JournalEntry journalEntry = getDao().save(obj);
 		checkForTransition(journalEntry);
 		return journalEntry;
@@ -125,40 +120,38 @@ public class JournalEntryServiceImpl
 				sAndP);
 	}
 	
- 	@Override
+ 	@Override //5
  	public List<JournalCaseNotesStudentReportTO> getJournalCaseNoteStudentReportTOsFromCriteria(JournalStepSearchFormTO personSearchForm, SortingAndPaging sAndP) throws ObjectNotFoundException{
- 		 final List<JournalCaseNotesStudentReportTO> personsWithJournalEntries = dao.getJournalCaseNoteStudentReportTOsFromCriteria(personSearchForm, sAndP);
- 		 final Map<String, JournalCaseNotesStudentReportTO> map = new HashMap<String, JournalCaseNotesStudentReportTO>();
-
- 		 for(JournalCaseNotesStudentReportTO entry:personsWithJournalEntries){
- 			 map.put(entry.getSchoolId(), entry);
- 		 }
-
- 		 final SortingAndPaging personSAndP = SortingAndPaging.createForSingleSortAll(ObjectStatus.ACTIVE, "lastName", "DESC") ;
- 		 final PagingWrapper<BaseStudentReportTO> persons = personDao.getStudentReportTOs(personSearchForm, personSAndP);
- 		
- 		 if (persons == null) {
- 			 return personsWithJournalEntries;
- 		 }
-
- 		 for (BaseStudentReportTO person:persons) {
-			 if (!map.containsKey(person.getSchoolId()) && StringUtils.isNotBlank(person.getCoachSchoolId())) {
-				 boolean addStudent = true;
-				 if (personSearchForm.getJournalSourceIds()!=null) {
-					if (getDao().getJournalCountForPersonForJournalSourceIds(person.getId(), personSearchForm.getJournalSourceIds()) == 0) {
-						addStudent = false;
-					}
-				 }
-			 	 if (addStudent) {
-					 final JournalCaseNotesStudentReportTO entry = new JournalCaseNotesStudentReportTO(person);
-					 personsWithJournalEntries.add(entry);
-					 map.put(entry.getSchoolId(), entry);
-				 }
- 			}
- 		 }
-		 SortByStudentName.execute(personsWithJournalEntries);
-
- 		 return personsWithJournalEntries;
+ 		return getJournalCaseNoteStudentReportTOsFromCriteria.execute(personSearchForm, sAndP);
+		/*
+		 * final List<JournalCaseNotesStudentReportTO> personsWithJournalEntries =
+		 * dao.getJournalCaseNoteStudentReportTOsFromCriteria(personSearchForm, sAndP);
+		 * final Map<String, JournalCaseNotesStudentReportTO> map = new HashMap<String,
+		 * JournalCaseNotesStudentReportTO>();
+		 * 
+		 * for(JournalCaseNotesStudentReportTO entry:personsWithJournalEntries){
+		 * map.put(entry.getSchoolId(), entry); }
+		 * 
+		 * final SortingAndPaging personSAndP =
+		 * SortingAndPaging.createForSingleSortAll(ObjectStatus.ACTIVE, "lastName",
+		 * "DESC") ; final PagingWrapper<BaseStudentReportTO> persons =
+		 * personDao.getStudentReportTOs(personSearchForm, personSAndP);
+		 * 
+		 * if (persons == null) { return personsWithJournalEntries; }
+		 * 
+		 * for (BaseStudentReportTO person:persons) { if
+		 * (!map.containsKey(person.getSchoolId()) &&
+		 * StringUtils.isNotBlank(person.getCoachSchoolId())) { boolean addStudent =
+		 * true; if (personSearchForm.getJournalSourceIds()!=null) { if
+		 * (getDao().getJournalCountForPersonForJournalSourceIds(person.getId(),
+		 * personSearchForm.getJournalSourceIds()) == 0) { addStudent = false; } } if
+		 * (addStudent) { final JournalCaseNotesStudentReportTO entry = new
+		 * JournalCaseNotesStudentReportTO(person);
+		 * personsWithJournalEntries.add(entry); map.put(entry.getSchoolId(), entry); }
+		 * } } SortByStudentName.execute(personsWithJournalEntries);
+		 * 
+		 * return personsWithJournalEntries;
+		 */
  	}
  	//5	//Externalizar 
 //	private static void sortByStudentName(List<JournalCaseNotesStudentReportTO> toSort) {
