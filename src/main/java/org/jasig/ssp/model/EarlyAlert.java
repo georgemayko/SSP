@@ -45,7 +45,6 @@ import org.jasig.ssp.service.ObjectNotFoundException;
 import org.jasig.ssp.service.impl.EarlyAlertMergerHelper;
 import org.jasig.ssp.util.uuid.UUIDCustomType;
 import org.jasig.ssp.web.api.validation.ValidationException;
-import org.springframework.util.Assert;
 
 import com.google.common.collect.Sets;
 
