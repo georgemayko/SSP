@@ -43,6 +43,7 @@ import org.jasig.ssp.model.reference.Campus;
 import org.jasig.ssp.model.reference.EarlyAlertReason;
 import org.jasig.ssp.model.reference.EarlyAlertSuggestion;
 import org.jasig.ssp.util.uuid.UUIDCustomType;
+import org.jasig.ssp.web.api.validation.ValidationException;
 
 import com.google.common.collect.Sets;
 
@@ -397,5 +398,34 @@ public class EarlyAlert // NOPMD by jon.adams on 5/24/12 1:29 PM
 
 	public void setEnrollmentStatus(String enrollmentStatus) {
 		this.enrollmentStatus = enrollmentStatus;
+	}
+	
+	
+	public  UUID getEarlyAlertAdvisor()
+			throws ValidationException { //1
+		// Check for student already assigned to an advisor (a.k.a. coach)
+		//1
+		if ((this.getPerson().getCoach() != null) &&
+				(this.getPerson().getCoach().getId() != null)) {
+			return this.getPerson().getCoach().getId();
+		}
+
+		// Get campus Early Alert coordinator
+		//1
+		if (this.getCampus() == null) {
+			throw new IllegalArgumentException("Campus ID can not be null.");
+		}
+		//1
+		if (this.getCampus().getEarlyAlertCoordinatorId() != null) {
+			// Return Early Alert coordinator UUID
+			return this.getCampus().getEarlyAlertCoordinatorId();
+		}
+
+		// TODO If no campus EA Coordinator, assign to default EA Coordinator
+		// (which is not yet implemented)
+
+		// getEarlyAlertAdvisor should never return null
+		throw new ValidationException(
+				"Could not determined the Early Alert Coordinator for this student. Ensure that a default coordinator is set globally and for all campuses.");
 	}
 }
