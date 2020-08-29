@@ -39,27 +39,21 @@ import org.jasig.ssp.model.EarlyAlertSearchResult;
 import org.jasig.ssp.model.Message;
 import org.jasig.ssp.model.ObjectStatus;
 import org.jasig.ssp.model.Person;
-import org.jasig.ssp.model.PersonProgramStatus;
 import org.jasig.ssp.model.SubjectAndBody;
 import org.jasig.ssp.model.reference.Campus;
 import org.jasig.ssp.model.reference.EarlyAlertReason;
 import org.jasig.ssp.model.reference.EarlyAlertSuggestion;
-import org.jasig.ssp.model.reference.ProgramStatus;
-import org.jasig.ssp.model.reference.StudentType;
 import org.jasig.ssp.security.SspUser;
 import org.jasig.ssp.service.AbstractPersonAssocAuditableService;
 import org.jasig.ssp.service.EarlyAlertService;
 import org.jasig.ssp.service.MessageService;
 import org.jasig.ssp.service.ObjectNotFoundException;
-import org.jasig.ssp.service.PersonProgramStatusService;
 import org.jasig.ssp.service.PersonService;
 import org.jasig.ssp.service.SecurityService;
 import org.jasig.ssp.service.reference.ConfigService;
 import org.jasig.ssp.service.reference.EarlyAlertReasonService;
 import org.jasig.ssp.service.reference.EarlyAlertSuggestionService;
 import org.jasig.ssp.service.reference.MessageTemplateService;
-import org.jasig.ssp.service.reference.ProgramStatusService;
-import org.jasig.ssp.service.reference.StudentTypeService;
 import org.jasig.ssp.transferobject.EarlyAlertSearchResultTO;
 import org.jasig.ssp.transferobject.PagedResponse;
 import org.jasig.ssp.transferobject.form.EarlyAlertSearchForm;
@@ -108,12 +102,6 @@ public class EarlyAlertServiceImpl extends // NOPMD
 	@Autowired //1
 	private transient PersonService personService;
 	@Autowired //1
-	private transient PersonProgramStatusService personProgramStatusService;
-	@Autowired //1
-	private transient ProgramStatusService programStatusService;
-	@Autowired //1
-	private transient StudentTypeService studentTypeService;
-	@Autowired //1
 	private transient SecurityService securityService;
 	@Autowired //1
 	private transient EarlyAlertSearchResultTOFactory searchResultFactory;
@@ -124,6 +112,8 @@ public class EarlyAlertServiceImpl extends // NOPMD
 	private EarlyAlertFillTemplateParameters earlyAlertFillTemplateParameters;
 	@Autowired //1
 	private SendAllEarlyAlertReminderNotifications sendAllEarlyAlertReminderNotifications;
+	@Autowired
+	private EnsureValidAlertedOnPersonStateOrFail ensureValidAlertedOnPersonStateOrFail;
 	//1
 	Function<EarlyAlert, Map<String, Object>> functionFillTemplateParameters = (earlyAlertParam) -> this.fillTemplateParameters(earlyAlertParam);
 	
@@ -353,55 +343,13 @@ public class EarlyAlertServiceImpl extends // NOPMD
 	private void ensureValidAlertedOnPersonStateNoFail(Person person) { //1
 		//1
 		try {
-			ensureValidAlertedOnPersonStateOrFail(person);
+			ensureValidAlertedOnPersonStateOrFail.execute(person);
 		//1	
 		} catch ( Exception e ) {
 			LOGGER.error("Unable to set a program status or student type on "
 					+ "person '{}'. This is likely to prevent that person "
 					+ "record from appearing in caseloads, student searches, "
 					+ "and some reports.", person.getId(), e);
-		}
-	}
-	//1
-	private void ensureValidAlertedOnPersonStateOrFail(Person person) //1
-			throws ObjectNotFoundException, ValidationException { //2
-		//1
-		if ( person.getObjectStatus() != ObjectStatus.ACTIVE ) {
-			person.setObjectStatus(ObjectStatus.ACTIVE);
-		}
-		//1
-		final ProgramStatus programStatus =  programStatusService.getActiveStatus();
-		//1
-		if ( programStatus == null ) {
-			throw new ObjectNotFoundException(
-					"Unable to find a ProgramStatus representing \"activeness\".",
-					"ProgramStatus");
-		}
-		//1
-		Set<PersonProgramStatus> programStatuses =
-				person.getProgramStatuses();
-		//1
-		if ( programStatuses == null || programStatuses.isEmpty() ) {
-			PersonProgramStatus personProgramStatus = new PersonProgramStatus();
-			personProgramStatus.setEffectiveDate(new Date());
-			personProgramStatus.setProgramStatus(programStatus);
-			personProgramStatus.setPerson(person);
-			programStatuses.add(personProgramStatus);
-			person.setProgramStatuses(programStatuses);
-			// save should cascade, but make sure custom create logic fires
-			personProgramStatusService.create(personProgramStatus);
-		}
-		//1
-		if ( person.getStudentType() == null ) {
-			//1
-			StudentType studentType = studentTypeService.get(StudentType.EAL_ID);
-			//1
-			if ( studentType == null ) {
-				throw new ObjectNotFoundException(
-						"Unable to find a StudentType representing an early "
-								+ "alert-assigned type.", "StudentType");
-			}
-			person.setStudentType(studentType);
 		}
 	}
 
