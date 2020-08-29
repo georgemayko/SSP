@@ -187,27 +187,16 @@ public class EarlyAlertServiceImpl extends // NOPMD
 		if ( earlyAlert == null ) {
 			throw new ObjectNotFoundException(earlyAlertId, EarlyAlert.class.getName());
 		}
-		//1
-		if ( earlyAlert.getClosedDate() != null ) {
-			// already closed
-			return;
+		
+		boolean ableToClose = earlyAlert.tryToClose(securityService.currentUser());
+		if(ableToClose) {
+			// This save will result in a Hib session flush, which works fine with
+			// our current usage. Future use cases might prefer to delay the
+			// flush and we can address that when the time comes. Might not even
+			// need to change anything here if it turns out nothing actually
+			// *depends* on the flush.
+			getDao().save(earlyAlert);
 		}
-		//1
-		final SspUser sspUser = securityService.currentUser();
-		//1
-		if ( sspUser == null ) {
-			throw new ValidationException("Early Alert cannot be closed by a null User.");
-		}
-
-		earlyAlert.setClosedDate(new Date());
-		earlyAlert.setClosedBy(sspUser.getPerson());
-
-		// This save will result in a Hib session flush, which works fine with
-		// our current usage. Future use cases might prefer to delay the
-		// flush and we can address that when the time comes. Might not even
-		// need to change anything here if it turns out nothing actually
-		// *depends* on the flush.
-		getDao().save(earlyAlert);
 	}
 	
 	@Override //6
@@ -222,26 +211,16 @@ public class EarlyAlertServiceImpl extends // NOPMD
 		if ( earlyAlert == null ) {
 			throw new ObjectNotFoundException(earlyAlertId, EarlyAlert.class.getName());
 		}
-		//1
-		if ( earlyAlert.getClosedDate() == null ) {
-			return;
+		
+		boolean ableToOpen = earlyAlert.tryToOpen(securityService.currentUser());
+		if(ableToOpen) {	
+			// This save will result in a Hib session flush, which works fine with
+			// our current usage. Future use cases might prefer to delay the
+			// flush and we can address that when the time comes. Might not even
+			// need to change anything here if it turns out nothing actually
+			// *depends* on the flush.
+			getDao().save(earlyAlert);
 		}
-		//1
-		final SspUser sspUser = securityService.currentUser();
-		//1
-		if ( sspUser == null ) {
-			throw new ValidationException("Early Alert cannot be closed by a null User.");
-		}
-
-		earlyAlert.setClosedDate(null);
-		earlyAlert.setClosedBy(null);
-
-		// This save will result in a Hib session flush, which works fine with
-		// our current usage. Future use cases might prefer to delay the
-		// flush and we can address that when the time comes. Might not even
-		// need to change anything here if it turns out nothing actually
-		// *depends* on the flush.
-		getDao().save(earlyAlert);
 	}
 
 	@Override 

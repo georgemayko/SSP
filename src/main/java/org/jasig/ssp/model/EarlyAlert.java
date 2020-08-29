@@ -40,10 +40,12 @@ import org.hibernate.annotations.TypeDef;
 import org.jasig.ssp.model.reference.Campus;
 import org.jasig.ssp.model.reference.EarlyAlertReason;
 import org.jasig.ssp.model.reference.EarlyAlertSuggestion;
+import org.jasig.ssp.security.SspUser;
 import org.jasig.ssp.service.ObjectNotFoundException;
 import org.jasig.ssp.service.impl.EarlyAlertMergerHelper;
 import org.jasig.ssp.util.uuid.UUIDCustomType;
 import org.jasig.ssp.web.api.validation.ValidationException;
+import org.springframework.util.Assert;
 
 import com.google.common.collect.Sets;
 
@@ -432,4 +434,29 @@ public class EarlyAlert // NOPMD by jon.adams on 5/24/12 1:29 PM
 		throw new ValidationException(
 				"Could not determined the Early Alert Coordinator for this student. Ensure that a default coordinator is set globally and for all campuses.");
 	}
+	
+	public boolean tryToOpen(SspUser sspUser) throws ValidationException {
+		if ( this.getClosedDate() == null ) {
+			return false;
+		}
+		if ( sspUser == null ) {
+			throw new ValidationException("Early Alert cannot be closed by a null User.");
+		}
+		this.setClosedDate(null);
+		this.setClosedBy(null);
+		return true;
+	}
+	
+	public boolean tryToClose(SspUser sspUser) throws ValidationException {
+		if ( this.getClosedDate() == null ) {
+			return false;
+		}
+		if ( sspUser == null ) {
+			throw new ValidationException("Early Alert cannot be closed by a null User.");
+		}
+		this.setClosedDate(new Date());
+		this.setClosedBy(sspUser.getPerson());
+		return true;
+	}
+
 }
