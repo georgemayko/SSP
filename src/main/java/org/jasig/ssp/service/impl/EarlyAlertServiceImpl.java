@@ -96,10 +96,6 @@ public class EarlyAlertServiceImpl extends // NOPMD
 	@Autowired //1
 	private transient MessageTemplateService messageTemplateService;
 	@Autowired //1
-	private transient EarlyAlertReasonService earlyAlertReasonService;
-	@Autowired //1
-	private transient EarlyAlertSuggestionService earlyAlertSuggestionService;
-	@Autowired //1
 	private transient PersonService personService;
 	@Autowired //1
 	private transient SecurityService securityService;
@@ -114,6 +110,8 @@ public class EarlyAlertServiceImpl extends // NOPMD
 	private SendAllEarlyAlertReminderNotifications sendAllEarlyAlertReminderNotifications;
 	@Autowired
 	private EnsureValidAlertedOnPersonStateOrFail ensureValidAlertedOnPersonStateOrFail;
+	@Autowired
+	private EarlyAlertMergerHelper earlyAlertMergerHelper;
 	//1
 	Function<EarlyAlert, Map<String, Object>> functionFillTemplateParameters = (earlyAlertParam) -> this.fillTemplateParameters(earlyAlertParam);
 	
@@ -132,27 +130,9 @@ public class EarlyAlertServiceImpl extends // NOPMD
 	public EarlyAlert create(@NotNull final EarlyAlert earlyAlert) //1
 			throws ObjectNotFoundException, ValidationException {
 		// Validate objects
-		//1
-		if (earlyAlert == null) {
-			throw new IllegalArgumentException("EarlyAlert must be provided.");
-		}
-		//1
-		if (earlyAlert.getPerson() == null) {
-			throw new ValidationException(
-					"EarlyAlert Student data must be provided.");
-		}
-
+		EarlyAlertCreateValidation.execute(earlyAlert);
 		final Person student = earlyAlert.getPerson();
-
-		// Figure student advisor or early alert coordinator
 		final UUID assignedAdvisor = earlyAlert.getEarlyAlertAdvisor();
-		//1
-		if (assignedAdvisor == null) {
-			//1
-			throw new ValidationException(
-					"Could not determine the Early Alert Advisor for student ID "
-							+ student.getId());
-		}
 		//1
 		if (student.getCoach() == null
 				|| assignedAdvisor.equals(student.getCoach().getId())) {
@@ -264,61 +244,11 @@ public class EarlyAlertServiceImpl extends // NOPMD
 		getDao().save(earlyAlert);
 	}
 
-	@Override //12
+	@Override 
 	public EarlyAlert save(@NotNull final EarlyAlert obj)
 			throws ObjectNotFoundException { //1
 		final EarlyAlert current = getDao().get(obj.getId());
-
-		current.setCourseName(obj.getCourseName());
-		current.setCourseTitle(obj.getCourseTitle());
-		current.setEmailCC(obj.getEmailCC());
-		current.setCampus(obj.getCampus());
-		current.setEarlyAlertReasonOtherDescription(obj
-				.getEarlyAlertReasonOtherDescription());
-		current.setComment(obj.getComment());
-		current.setClosedDate(obj.getClosedDate());
-		//1
-		if ( obj.getClosedById() == null ) {
-			current.setClosedBy(null);
-			//1
-		} else {
-			//1
-			current.setClosedBy(personService.get(obj.getClosedById()));
-		}
-		//1
-		if (obj.getPerson() == null) {
-			current.setPerson(null);
-			//1
-		} else {
-			//1
-			current.setPerson(personService.get(obj.getPerson().getId()));
-		}
-		//1
-		final Set<EarlyAlertReason> earlyAlertReasons = new HashSet<EarlyAlertReason>();
-		//1
-		if (obj.getEarlyAlertReasons() != null) {
-			//1
-			for (final EarlyAlertReason reason : obj.getEarlyAlertReasons()) {
-				earlyAlertReasons.add(earlyAlertReasonService.load(reason
-						.getId()));
-			}
-		}
-
-		current.setEarlyAlertReasons(earlyAlertReasons);
-		//1
-		final Set<EarlyAlertSuggestion> earlyAlertSuggestions = new HashSet<EarlyAlertSuggestion>();
-		//1
-		if (obj.getEarlyAlertSuggestions() != null) {
-			for (final EarlyAlertSuggestion reason : obj
-					.getEarlyAlertSuggestions()) {
-				earlyAlertSuggestions.add(earlyAlertSuggestionService
-						.load(reason
-								.getId()));
-			}
-		}
-
-		current.setEarlyAlertSuggestions(earlyAlertSuggestions);
-
+		current.merge(obj, earlyAlertMergerHelper);
 		return getDao().save(current);
 	}
 

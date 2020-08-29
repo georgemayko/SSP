@@ -19,7 +19,6 @@
 package org.jasig.ssp.model;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -37,11 +36,12 @@ import javax.persistence.TemporalType;
 import javax.validation.constraints.Size;
 
 import org.hibernate.annotations.Formula;
-import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.jasig.ssp.model.reference.Campus;
 import org.jasig.ssp.model.reference.EarlyAlertReason;
 import org.jasig.ssp.model.reference.EarlyAlertSuggestion;
+import org.jasig.ssp.service.ObjectNotFoundException;
+import org.jasig.ssp.service.impl.EarlyAlertMergerHelper;
 import org.jasig.ssp.util.uuid.UUIDCustomType;
 import org.jasig.ssp.web.api.validation.ValidationException;
 
@@ -400,6 +400,10 @@ public class EarlyAlert // NOPMD by jon.adams on 5/24/12 1:29 PM
 		this.enrollmentStatus = enrollmentStatus;
 	}
 	
+	
+	public void merge(EarlyAlert obj, EarlyAlertMergerHelper merger) throws ObjectNotFoundException {
+		merger.execute(this, obj);
+	}
 	
 	public  UUID getEarlyAlertAdvisor()
 			throws ValidationException { //1
