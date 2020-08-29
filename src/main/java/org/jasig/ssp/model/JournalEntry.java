@@ -38,6 +38,9 @@ import org.hibernate.annotations.CascadeType;
 import org.jasig.ssp.model.reference.ConfidentialityLevel;
 import org.jasig.ssp.model.reference.JournalSource;
 import org.jasig.ssp.model.reference.JournalTrack;
+import org.jasig.ssp.service.ObjectNotFoundException;
+import org.jasig.ssp.service.PersonProgramStatusService;
+import org.jasig.ssp.web.api.validation.ValidationException;
 
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
@@ -130,6 +133,24 @@ public class JournalEntry
 
 	public Set<JournalEntryDetail> getJournalEntryDetails() {
 		return journalEntryDetails;
+	}
+	
+	
+	public void checkForTransition(PersonProgramStatusService personProgramStatusService) //1
+		throws ObjectNotFoundException, ValidationException { //2
+		// search for a JournalStep that indicates a transition
+		for (final JournalEntryDetail detail : this //1
+				.getJournalEntryDetails()) {
+			if (detail.getJournalStepJournalStepDetail().getJournalStep() //1
+					.isUsedForTransition()) {
+				// is used for transition, so attempt to set program status
+				personProgramStatusService.setTransitionForStudent(this
+						.getPerson());
+		
+				// exit early because no need to loop through others
+				return;
+			}
+		}
 	}
 
 	public void setJournalEntryDetails(
