@@ -24,7 +24,6 @@ import java.util.UUID;
 
 import org.jasig.ssp.dao.JournalEntryDao;
 import org.jasig.ssp.model.JournalEntry;
-import org.jasig.ssp.model.JournalEntryDetail;
 import org.jasig.ssp.model.Person;
 import org.jasig.ssp.service.AbstractRestrictedPersonAssocAuditableService;
 import org.jasig.ssp.service.JournalEntryService;
@@ -43,28 +42,28 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional
+@Transactional //16
 public class JournalEntryServiceImpl
-		extends AbstractRestrictedPersonAssocAuditableService<JournalEntry>
-		implements JournalEntryService {
+		extends AbstractRestrictedPersonAssocAuditableService<JournalEntry> //2
+		implements JournalEntryService { //1
 
-	@Autowired
+	@Autowired //1
 	private transient JournalEntryDao dao; 
 
-	@Autowired
+	@Autowired //1
 	private transient PersonProgramStatusService personProgramStatusService; 
 	
-	@Autowired
+	@Autowired //1
 	private GetJournalCaseNoteStudentReportTOsFromCriteria getJournalCaseNoteStudentReportTOsFromCriteria;
 	
 
-	@Override
-	protected JournalEntryDao getDao() { //2
+	@Override  //0
+	protected JournalEntryDao getDao() { 
 		return dao;
 	}
 
-	@Override
-	public JournalEntry create(final JournalEntry obj) //1
+	@Override //2
+	public JournalEntry create(final JournalEntry obj)
 			throws ObjectNotFoundException, ValidationException { //2
 		final JournalEntry journalEntry = getDao().save(obj);
 		journalEntry.checkForTransition(personProgramStatusService);
@@ -79,29 +78,29 @@ public class JournalEntryServiceImpl
 		return journalEntry;
 	}
 	
-	@Override
+	@Override //1
 	public Long getCountForCoach(Person coach, Date createDateFrom, Date createDateTo, List<UUID> studentTypeIds){
 		return dao.getJournalCountForCoach(coach, createDateFrom, createDateTo, studentTypeIds);
 	}
 
-	@Override
+	@Override 
 	public Long getStudentCountForCoach(Person coach, Date createDateFrom, Date createDateTo, List<UUID> studentTypeIds) {
 		return dao.getStudentJournalCountForCoach(coach, createDateFrom, createDateTo, studentTypeIds);
 	}
 	
-	@Override
+	@Override //3
 	public PagingWrapper<EntityStudentCountByCoachTO> getStudentJournalCountForCoaches(EntityCountByCoachSearchForm form){
 		return dao.getStudentJournalCountForCoaches(form);
 	}
 	
-	@Override
+	@Override //3
 	public PagingWrapper<JournalStepStudentReportTO> getJournalStepStudentReportTOsFromCriteria(JournalStepSearchFormTO personSearchForm,  
 			SortingAndPaging sAndP){
 		return dao.getJournalStepStudentReportTOsFromCriteria(personSearchForm,  
 				sAndP);
 	}
 	
- 	@Override //5
+ 	@Override //1
  	public List<JournalCaseNotesStudentReportTO> getJournalCaseNoteStudentReportTOsFromCriteria(JournalStepSearchFormTO personSearchForm, SortingAndPaging sAndP) throws ObjectNotFoundException{
  		return getJournalCaseNoteStudentReportTOsFromCriteria.execute(personSearchForm, sAndP);
  	}

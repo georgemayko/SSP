@@ -17,7 +17,7 @@ import org.jasig.ssp.util.sort.SortingAndPaging;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-@Service
+@Service //17 //TODO refatorar
 public class GetJournalCaseNoteStudentReportTOsFromCriteria {
 	
 	@Autowired
@@ -38,7 +38,7 @@ public class GetJournalCaseNoteStudentReportTOsFromCriteria {
  		 for(JournalCaseNotesStudentReportTO entry:personsWithJournalEntries){ 
  			 map.put(entry.getSchoolId(), entry);
  		 }
- 		 //2
+ 		 //1
  		 final SortingAndPaging personSAndP = SortingAndPaging.createForSingleSortAll(ObjectStatus.ACTIVE, "lastName", "DESC") ;
  		 //2
  		 final PagingWrapper<BaseStudentReportTO> persons = personDao.getStudentReportTOs(personSearchForm, personSAndP);
@@ -49,10 +49,12 @@ public class GetJournalCaseNoteStudentReportTOsFromCriteria {
  		 }
 
  		 for (BaseStudentReportTO person:persons) { //1
-			 if (!map.containsKey(person.getSchoolId()) && StringUtils.isNotBlank(person.getCoachSchoolId())) { //1
+ 			 //1
+			 if (!map.containsKey(person.getSchoolId()) && StringUtils.isNotBlank(person.getCoachSchoolId())) { 
 				 boolean addStudent = true;
-				 if (personSearchForm.getJournalSourceIds()!=null) {//1
-					 //1
+				//1
+				 if (personSearchForm.getJournalSourceIds()!=null) {
+					//1
 					if (dao.getJournalCountForPersonForJournalSourceIds(person.getId(), personSearchForm.getJournalSourceIds()) == 0) {
 						addStudent = false;
 					}
